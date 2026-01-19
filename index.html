@@ -188,7 +188,7 @@
                             </button>
                             <div class="play-count">
                                 <i class="fas fa-redo"></i>
-                                <span id="playCount">0</span>회 재생 가능
+                                <span id="playCount">3</span>회 재생 가능
                             </div>
                         </div>
                     </div>
@@ -228,7 +228,7 @@
                     </div>
 
                     <!-- 실시간 피드백 -->
-                    <div class="live-feedback hidden" id="liveFeedback">
+                    <div class="live-feedback" id="liveFeedback">
                         <h3><i class="fas fa-bolt"></i> 실시간 분석</h3>
                         <div class="feedback-grid">
                             <div class="feedback-item">
@@ -246,14 +246,23 @@
                                     <span class="speed-value" id="speedValue">적정</span>
                                 </div>
                             </div>
+                            <div class="feedback-item">
+                                <span class="feedback-label">발음 점수</span>
+                                <div class="feedback-score">
+                                    <div class="score-bar">
+                                        <div class="score-fill" id="pronunciationBar"></div>
+                                    </div>
+                                    <span class="score-value" id="pronunciationScore">0%</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- 네비게이션 -->
                     <div class="test-navigation">
-                        <button id="nextSentenceBtn" class="btn-primary" disabled>
-                            다음 문장
-                            <i class="fas fa-arrow-right"></i>
+                        <button id="prevSentenceBtn" class="btn-outline" disabled>
+                            <i class="fas fa-arrow-left"></i>
+                            이전 문장
                         </button>
                         <div class="skip-option">
                             <button id="skipSentenceBtn" class="btn-text">
@@ -261,6 +270,10 @@
                                 이 문장 건너뛰기
                             </button>
                         </div>
+                        <button id="nextSentenceBtn" class="btn-primary" disabled>
+                            다음 문장
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -272,13 +285,13 @@
                     <div class="level-display">
                         <div class="level-badge-large" id="finalLevelBadge">
                             <span class="level-letter">S</span>
-                            <span class="level-number">6</span>
+                            <span class="level-number" id="finalLevelNumber">?</span>
                         </div>
                         <div class="level-info">
                             <h2>당신의 발음 명료도 레벨은</h2>
-                            <h1 class="level-title" id="levelTitle">S6</h1>
+                            <h1 class="level-title" id="levelTitle">S?</h1>
                             <p class="level-description" id="levelDescription">
-                                원활한 의사소통 가능
+                                평가가 완료되면 여기에 설명이 표시됩니다
                             </p>
                         </div>
                     </div>
@@ -291,15 +304,14 @@
                             </div>
                             <div class="score-content">
                                 <h3>전체 명료도</h3>
-                                <div class="score-value-large" id="overallScore">74%</div>
+                                <div class="score-value-large" id="overallScore">0%</div>
                                 <div class="score-progress">
                                     <div class="progress-circle">
                                         <svg width="80" height="80">
                                             <circle class="progress-bg" cx="40" cy="40" r="35"></circle>
-                                            <circle class="progress-fill" cx="40" cy="40" r="35" 
-                                                    stroke-dasharray="220" stroke-dashoffset="56.2"></circle>
+                                            <circle class="progress-fill" id="overallCircle" cx="40" cy="40" r="35"></circle>
                                         </svg>
-                                        <span class="progress-text">74%</span>
+                                        <span class="progress-text" id="overallPercent">0%</span>
                                     </div>
                                 </div>
                             </div>
@@ -310,27 +322,27 @@
                                 <span class="detail-label">기초 명료도</span>
                                 <div class="detail-score">
                                     <div class="detail-bar">
-                                        <div class="detail-fill" style="width: 82%"></div>
+                                        <div class="detail-fill" id="basicClarityBar"></div>
                                     </div>
-                                    <span>82%</span>
+                                    <span id="basicClarityScore">0%</span>
                                 </div>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">음소 구분</span>
                                 <div class="detail-score">
                                     <div class="detail-bar">
-                                        <div class="detail-fill" style="width: 65%"></div>
+                                        <div class="detail-fill" id="phonemeBar"></div>
                                     </div>
-                                    <span>65%</span>
+                                    <span id="phonemeScore">0%</span>
                                 </div>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">억양 리듬</span>
                                 <div class="detail-score">
                                     <div class="detail-bar">
-                                        <div class="detail-fill" style="width: 75%"></div>
+                                        <div class="detail-fill" id="intonationBar"></div>
                                     </div>
-                                    <span>75%</span>
+                                    <span id="intonationScore">0%</span>
                                 </div>
                             </div>
                         </div>
@@ -340,7 +352,7 @@
                     <div class="phoneme-analysis">
                         <h3><i class="fas fa-chart-pie"></i> 음소별 정확도</h3>
                         <div class="phoneme-grid" id="phonemeGrid">
-                            <!-- JavaScript로 동적 생성 -->
+                            <!-- 동적 생성 -->
                         </div>
                     </div>
 
@@ -349,13 +361,13 @@
                         <div class="improvement-card">
                             <h3><i class="fas fa-star"></i> 주요 강점</h3>
                             <ul class="strength-list" id="strengthList">
-                                <!-- JavaScript로 동적 생성 -->
+                                <!-- 동적 생성 -->
                             </ul>
                         </div>
                         <div class="improvement-card">
                             <h3><i class="fas fa-tools"></i> 개선 필요 항목</h3>
                             <ul class="improvement-list" id="improvementList">
-                                <!-- JavaScript로 동적 생성 -->
+                                <!-- 동적 생성 -->
                             </ul>
                         </div>
                     </div>
@@ -364,7 +376,7 @@
                     <div class="practice-recommendation">
                         <h3><i class="fas fa-dumbbell"></i> 추천 연습</h3>
                         <div class="practice-list" id="practiceList">
-                            <!-- JavaScript로 동적 생성 -->
+                            <!-- 동적 생성 -->
                         </div>
                     </div>
 
@@ -413,6 +425,8 @@
                     <li><strong>S7-S9:</strong> 원어민에 가까운 발음</li>
                     <li><strong>S10:</strong> 완벽한 명료도</li>
                 </ul>
+                <p>각 문장은 특정 음소 발음 평가를 위해 설계되었습니다.</p>
+                <p>녹음은 최대 10초까지 가능하며, 실시간 분석이 제공됩니다.</p>
             </div>
         </div>
     </div>
@@ -421,7 +435,37 @@
     <div id="loadingOverlay" class="loading-overlay hidden">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <p>음성 분석 중...</p>
+            <p id="loadingText">음성 분석 중...</p>
+        </div>
+    </div>
+
+    <!-- 결과 공유 모달 -->
+    <div id="shareModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-share-alt"></i> 결과 공유하기</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="share-options">
+                    <button class="share-option-btn" id="copyLinkBtn">
+                        <i class="fas fa-link"></i>
+                        링크 복사
+                    </button>
+                    <button class="share-option-btn" id="twitterShareBtn">
+                        <i class="fab fa-twitter"></i>
+                        트위터
+                    </button>
+                    <button class="share-option-btn" id="facebookShareBtn">
+                        <i class="fab fa-facebook"></i>
+                        페이스북
+                    </button>
+                </div>
+                <div class="share-preview">
+                    <p>내 발음 레벨: <strong id="shareLevel">S?</strong></p>
+                    <p>전체 명료도: <strong id="shareScore">0%</strong></p>
+                </div>
+            </div>
         </div>
     </div>
 
