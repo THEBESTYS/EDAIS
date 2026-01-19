@@ -802,7 +802,7 @@ function removeFile() {
     }
 }
 
-// AI 분석 시뮬레이션 - 개선된 버전 (언어 감지 포함)
+// AI 분석 시뮬레이션 - 개선된 버전 (발음, 유창성, 정확성 + 보너스)
 function simulateAnalysis() {
     const analysisProgress = document.getElementById('analysisProgress');
     const analysisResult = document.getElementById('analysisResult');
@@ -831,6 +831,7 @@ function simulateAnalysis() {
     
     // 진행 상태 업데이트 함수들
     const statElements = {
+        pronunciation: document.getElementById('pronunciationStat'),
         fluency: document.getElementById('fluencyStat'),
         accuracy: document.getElementById('accuracyStat')
     };
@@ -851,9 +852,17 @@ function simulateAnalysis() {
         }
         
         // 각 분석 항목별 진행률 업데이트
-        if (progress <= 50) {
+        if (progress <= 33) {
+            if (statElements.pronunciation) {
+                statElements.pronunciation.textContent = `${Math.round(progress * 3.03)}%`;
+                statElements.pronunciation.classList.add('stat-updating');
+                setTimeout(() => {
+                    statElements.pronunciation.classList.remove('stat-updating');
+                }, 100);
+            }
+        } else if (progress <= 66) {
             if (statElements.fluency) {
-                statElements.fluency.textContent = `${progress * 2}%`;
+                statElements.fluency.textContent = `${Math.round((progress - 33) * 3.03)}%`;
                 statElements.fluency.classList.add('stat-updating');
                 setTimeout(() => {
                     statElements.fluency.classList.remove('stat-updating');
@@ -861,7 +870,7 @@ function simulateAnalysis() {
             }
         } else {
             if (statElements.accuracy) {
-                statElements.accuracy.textContent = `${(progress - 50) * 2}%`;
+                statElements.accuracy.textContent = `${Math.round((progress - 66) * 3.03)}%`;
                 statElements.accuracy.classList.add('stat-updating');
                 setTimeout(() => {
                     statElements.accuracy.classList.remove('stat-updating');
@@ -953,7 +962,7 @@ function simulateLanguageDetection() {
     }, 30);
 }
 
-// 결과 생성 (언어 감지 로직 포함)
+// 결과 생성 (언어 감지 로직 포함 + 발음 평가 + 원어민 유창성 보너스)
 function generateResultsWithLanguageDetection() {
     // 파일명 기반 언어 감지 (간단한 버전)
     let isEnglish = true;
@@ -994,19 +1003,22 @@ function generateResultsWithLanguageDetection() {
         return;
     }
     
-    // 영어 음성 처리
-    generateEnglishResults();
+    // 영어 음성 처리 (발음, 유창성, 정확성 + 보너스)
+    generateEnglishResultsWithBonus();
 }
 
 // 비영어 결과 표시
 function showNonEnglishResult() {
     const nonEnglishAlert = document.getElementById('nonEnglishAlert');
     const edLevelBadge = document.getElementById('edLevelBadge');
+    const pronunciationScore = document.getElementById('pronunciationScore');
     const fluencyScore = document.getElementById('fluencyScore');
     const accuracyScore = document.getElementById('accuracyScore');
     const totalScore = document.getElementById('totalScore');
+    const pronunciationFill = document.getElementById('pronunciationFill');
     const fluencyFill = document.getElementById('fluencyFill');
     const accuracyFill = document.getElementById('accuracyFill');
+    const bonusScoreSection = document.getElementById('bonusScoreSection');
     const cefrLevel = document.getElementById('cefrLevel');
     const toeicScore = document.getElementById('toeicScore');
     const ieltsScore = document.getElementById('ieltsScore');
@@ -1015,6 +1027,11 @@ function showNonEnglishResult() {
     if (nonEnglishAlert) {
         nonEnglishAlert.style.display = 'block';
         nonEnglishAlert.classList.add('alert-appear');
+    }
+    
+    // 보너스 점수 섹션 숨기기
+    if (bonusScoreSection) {
+        bonusScoreSection.style.display = 'none';
     }
     
     // 0점 설정
@@ -1026,9 +1043,11 @@ function showNonEnglishResult() {
         edLevelBadge.classList.add('badge-error');
     }
     
+    if (pronunciationScore) pronunciationScore.textContent = '0%';
     if (fluencyScore) fluencyScore.textContent = '0%';
     if (accuracyScore) accuracyScore.textContent = '0%';
     if (totalScore) totalScore.textContent = '0점';
+    if (pronunciationFill) pronunciationFill.style.width = '0%';
     if (fluencyFill) fluencyFill.style.width = '0%';
     if (accuracyFill) accuracyFill.style.width = '0%';
     if (cefrLevel) {
@@ -1048,26 +1067,58 @@ function showNonEnglishResult() {
         ielts: 'N/A',
         levelDesc: '비영어 음성',
         isNonEnglish: true,
+        pronunciationScore: 0,
         fluencyScore: 0,
         accuracyScore: 0,
+        bonusScore: 0,
         totalScore: 0
     }));
 }
 
-// 영어 결과 생성
-function generateEnglishResults() {
-    // ED 레벨 후보들
+// 영어 결과 생성 (발음, 유창성, 정확성 + 원어민 유창성 보너스)
+function generateEnglishResultsWithBonus() {
+    // ED 레벨 후보들 (발음, 유창성, 정확성 가중치 포함)
     const edLevels = [
-        { name: "Pre-Basic", desc: "입문자", cefr: "A1", toeic: "10-119", ielts: "1.0-1.5", fluencyWeight: 0.3, accuracyWeight: 0.2 },
-        { name: "Basic 3", desc: "초급", cefr: "A1", toeic: "120-224", ielts: "2.0-2.5", fluencyWeight: 0.4, accuracyWeight: 0.3 },
-        { name: "Basic 2", desc: "초중급", cefr: "A2", toeic: "225-549", ielts: "3.0-3.5", fluencyWeight: 0.5, accuracyWeight: 0.4 },
-        { name: "Basic 1", desc: "초중급", cefr: "A2", toeic: "225-549", ielts: "3.0-3.5", fluencyWeight: 0.6, accuracyWeight: 0.5 },
-        { name: "Intermediate 1", desc: "중급", cefr: "B1", toeic: "550-650", ielts: "4.0-4.5", fluencyWeight: 0.7, accuracyWeight: 0.6 },
-        { name: "Intermediate 2", desc: "중급", cefr: "B1", toeic: "650-720", ielts: "4.5-5.0", fluencyWeight: 0.75, accuracyWeight: 0.65 },
-        { name: "Intermediate 3", desc: "중상급", cefr: "B2", toeic: "720-784", ielts: "5.0-5.5", fluencyWeight: 0.8, accuracyWeight: 0.7 },
-        { name: "Advanced 1", desc: "중상급", cefr: "B2", toeic: "785-850", ielts: "5.5-6.0", fluencyWeight: 0.85, accuracyWeight: 0.75 },
-        { name: "Advanced 2", desc: "고급", cefr: "C1", toeic: "945-990", ielts: "7.0-7.5", fluencyWeight: 0.9, accuracyWeight: 0.85 },
-        { name: "Advanced 3", desc: "고급", cefr: "C1", toeic: "945-990", ielts: "7.5-8.0", fluencyWeight: 0.95, accuracyWeight: 0.9 }
+        { 
+            name: "Pre-Basic", desc: "입문자", cefr: "A1", toeic: "10-119", ielts: "1.0-1.5",
+            pronunciationWeight: 0.3, fluencyWeight: 0.2, accuracyWeight: 0.2 
+        },
+        { 
+            name: "Basic 3", desc: "초급", cefr: "A1", toeic: "120-224", ielts: "2.0-2.5",
+            pronunciationWeight: 0.4, fluencyWeight: 0.3, accuracyWeight: 0.3 
+        },
+        { 
+            name: "Basic 2", desc: "초중급", cefr: "A2", toeic: "225-549", ielts: "3.0-3.5",
+            pronunciationWeight: 0.5, fluencyWeight: 0.4, accuracyWeight: 0.4 
+        },
+        { 
+            name: "Basic 1", desc: "초중급", cefr: "A2", toeic: "225-549", ielts: "3.0-3.5",
+            pronunciationWeight: 0.6, fluencyWeight: 0.5, accuracyWeight: 0.5 
+        },
+        { 
+            name: "Intermediate 1", desc: "중급", cefr: "B1", toeic: "550-650", ielts: "4.0-4.5",
+            pronunciationWeight: 0.65, fluencyWeight: 0.6, accuracyWeight: 0.6 
+        },
+        { 
+            name: "Intermediate 2", desc: "중급", cefr: "B1", toeic: "650-720", ielts: "4.5-5.0",
+            pronunciationWeight: 0.7, fluencyWeight: 0.65, accuracyWeight: 0.65 
+        },
+        { 
+            name: "Intermediate 3", desc: "중상급", cefr: "B2", toeic: "720-784", ielts: "5.0-5.5",
+            pronunciationWeight: 0.75, fluencyWeight: 0.7, accuracyWeight: 0.7 
+        },
+        { 
+            name: "Advanced 1", desc: "중상급", cefr: "B2", toeic: "785-850", ielts: "5.5-6.0",
+            pronunciationWeight: 0.8, fluencyWeight: 0.75, accuracyWeight: 0.75 
+        },
+        { 
+            name: "Advanced 2", desc: "고급", cefr: "C1", toeic: "945-990", ielts: "7.0-7.5",
+            pronunciationWeight: 0.85, fluencyWeight: 0.8, accuracyWeight: 0.8 
+        },
+        { 
+            name: "Advanced 3", desc: "고급", cefr: "C1", toeic: "945-990", ielts: "7.5-8.0",
+            pronunciationWeight: 0.9, fluencyWeight: 0.85, accuracyWeight: 0.85 
+        }
     ];
     
     // 레벨 선택 (중간 레벨에 가중치)
@@ -1087,9 +1138,27 @@ function generateEnglishResults() {
     const result = edLevels[selectedIndex];
     
     // 점수 계산 (레벨별 가중치에 약간의 변동 추가)
-    const fluencyScore = Math.round((result.fluencyWeight + (Math.random() * 0.2 - 0.1)) * 100);
+    const pronunciationScore = Math.round((result.pronunciationWeight + (Math.random() * 0.2 - 0.1)) * 100);
+    let fluencyScore = Math.round((result.fluencyWeight + (Math.random() * 0.2 - 0.1)) * 100);
     const accuracyScore = Math.round((result.accuracyWeight + (Math.random() * 0.2 - 0.1)) * 100);
-    const totalScore = ((fluencyScore + accuracyScore) / 2).toFixed(1);
+    
+    // 원어민 유창성 보너스 점수 계산
+    let bonusScore = 0;
+    let showBonus = false;
+    
+    // 고급 레벨일수록 원어민 유창성 보너스 확률 증가
+    const bonusProbability = selectedIndex >= 5 ? 0.4 : (selectedIndex >= 3 ? 0.2 : 0.05);
+    
+    if (Math.random() < bonusProbability) {
+        // 원어민처럼 끊김없이 말하는 경우
+        bonusScore = Math.floor(Math.random() * 10) + 5; // 5-15% 추가 점수
+        fluencyScore = Math.min(100, fluencyScore + bonusScore); // 최대 100점으로 제한
+        showBonus = true;
+    }
+    
+    // 종합 점수 계산 (발음 30%, 유창성 40%, 정확성 30%)
+    const weightedScore = (pronunciationScore * 0.3) + (fluencyScore * 0.4) + (accuracyScore * 0.3);
+    const totalScore = weightedScore.toFixed(1);
     
     // 결과 표시
     const edLevelBadge = document.getElementById('edLevelBadge');
@@ -1106,17 +1175,36 @@ function generateEnglishResults() {
     }
     
     // 점수 표시
+    const pronunciationScoreElement = document.getElementById('pronunciationScore');
     const fluencyScoreElement = document.getElementById('fluencyScore');
     const accuracyScoreElement = document.getElementById('accuracyScore');
     const totalScoreElement = document.getElementById('totalScore');
+    const pronunciationFill = document.getElementById('pronunciationFill');
     const fluencyFill = document.getElementById('fluencyFill');
     const accuracyFill = document.getElementById('accuracyFill');
+    const bonusScoreSection = document.getElementById('bonusScoreSection');
+    const bonusScoreElement = document.getElementById('bonusScore');
     
+    if (pronunciationScoreElement) pronunciationScoreElement.textContent = `${pronunciationScore}%`;
     if (fluencyScoreElement) fluencyScoreElement.textContent = `${fluencyScore}%`;
     if (accuracyScoreElement) accuracyScoreElement.textContent = `${accuracyScore}%`;
     if (totalScoreElement) totalScoreElement.textContent = `${totalScore}점`;
+    if (pronunciationFill) pronunciationFill.style.width = `${pronunciationScore}%`;
     if (fluencyFill) fluencyFill.style.width = `${fluencyScore}%`;
     if (accuracyFill) accuracyFill.style.width = `${accuracyScore}%`;
+    
+    // 보너스 점수 표시
+    if (bonusScoreSection && showBonus) {
+        bonusScoreSection.style.display = 'block';
+        if (bonusScoreElement) bonusScoreElement.textContent = `+${bonusScore}%`;
+        bonusScoreSection.classList.add('bonus-appear');
+        
+        setTimeout(() => {
+            bonusScoreSection.classList.remove('bonus-appear');
+        }, 2000);
+    } else if (bonusScoreSection) {
+        bonusScoreSection.style.display = 'none';
+    }
     
     const cefrLevel = document.getElementById('cefrLevel');
     if (cefrLevel) {
@@ -1173,8 +1261,11 @@ function generateEnglishResults() {
         ielts: result.ielts,
         levelDesc: result.desc,
         isNonEnglish: false,
+        pronunciationScore: pronunciationScore,
         fluencyScore: fluencyScore,
         accuracyScore: accuracyScore,
+        bonusScore: showBonus ? bonusScore : 0,
+        hasBonus: showBonus,
         totalScore: totalScore
     }));
 }
@@ -1274,6 +1365,7 @@ function restartDiagnosis() {
     const progressFill = document.getElementById('progressFill');
     const nonEnglishAlert = document.getElementById('nonEnglishAlert');
     const languageDetection = document.getElementById('languageDetection');
+    const bonusScoreSection = document.getElementById('bonusScoreSection');
     
     if (analysisProgress) {
         analysisProgress.style.display = 'block';
@@ -1303,6 +1395,11 @@ function restartDiagnosis() {
     if (languageDetection) {
         languageDetection.style.display = 'none';
         languageDetection.classList.remove('detection-show');
+    }
+    
+    if (bonusScoreSection) {
+        bonusScoreSection.style.display = 'none';
+        bonusScoreSection.classList.remove('bonus-appear');
     }
     
     // 프로그레스 바 비활성화
@@ -1471,7 +1568,8 @@ function shareResult() {
     if (resultData.isNonEnglish) {
         shareText = `❌ 영어 레벨 진단 결과: 비영어 음성 감지\n\n📊 점수: 0점\n\n※ 영어 음성만 평가가 가능합니다.\n\n#EnglishDiscoveries #영어레벨진단`;
     } else {
-        shareText = `🎯 영어 레벨 진단 결과: ${resultData.edLevel} (CEFR ${resultData.cefr})\n\n📊 점수 분석:\n• 유창성: ${resultData.fluencyScore}%\n• 정확성: ${resultData.accuracyScore}%\n• 종합: ${resultData.totalScore}점\n\n📚 추천 과정: ${resultData.recommendedCourse}\n\n#EnglishDiscoveries #영어레벨진단`;
+        const bonusText = resultData.hasBonus ? `\n⭐ 원어민 유창성 보너스: +${resultData.bonusScore}%\n` : '';
+        shareText = `🎯 영어 레벨 진단 결과: ${resultData.edLevel} (CEFR ${resultData.cefr})\n\n📊 3가지 평가 항목:\n• 발음: ${resultData.pronunciationScore}%\n• 유창성: ${resultData.fluencyScore}%${bonusText}• 정확성: ${resultData.accuracyScore}%\n• 종합: ${resultData.totalScore}점\n\n📚 추천 과정: ${resultData.recommendedCourse}\n\n#EnglishDiscoveries #영어레벨진단`;
     }
     
     // 클립보드에 복사
