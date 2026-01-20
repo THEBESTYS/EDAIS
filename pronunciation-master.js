@@ -1,200 +1,110 @@
-// ===== CORE 5 SENTENCES PRONUNCIATION TEST =====
+<!-- 기존의 녹음 컨트롤 부분을 이렇게 수정하세요 -->
+<div class="recording-controls text-center">
+    <div style="margin-bottom: 30px;">
+        <button id="startRecordingBtn" class="record-btn" onclick="safeStartRecording()">
+            <i class="fas fa-microphone-alt"></i>
+        </button>
+        <button id="stopRecordingBtn" class="stop-btn hidden" onclick="safeStopRecording()">
+            <i class="fas fa-stop"></i>
+        </button>
+    </div>
+    
+    <div class="btn-label" id="recordingStatus">
+        <div style="margin-bottom: 10px;">
+            <i class="fas fa-info-circle" style="color: #4361ee;"></i>
+            녹음 버튼을 클릭하면 마이크 권한 요청이 표시됩니다.
+        </div>
+    </div>
+    
+    <!-- 데모 모드 버튼 추가 -->
+    <div id="demoMode" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+        <p style="margin-bottom: 10px; color: #666;">
+            <i class="fas fa-exclamation-triangle"></i>
+            마이크 문제가 있나요?
+        </p>
+        <button id="demoButton" class="btn-secondary" 
+                style="padding: 10px 20px; font-size: 0.9rem;"
+                onclick="useDemoMode()">
+            <i class="fas fa-play-circle"></i> 데모 모드로 계속하기
+        </button>
+    </div>
+    
+    <button id="nextSentenceBtn" class="next-btn" disabled onclick="nextSentence()">
+        다음 문장 진행하기 <i class="fas fa-arrow-right"></i>
+    </button>
+</div>
 
-const CORE_SENTENCES = [
-    {
-        id: 1,
-        text: "She sells seashells by the seashore.",
-        focus: ["/ʃ/", "/s/", "/l/"],
-        difficulty: 7
-    },
-    {
-        id: 2,
-        text: "How now brown cow?",
-        focus: ["/aʊ/", "/aʊ/", "/aʊ/"],
-        difficulty: 5
-    },
-    {
-        id: 3,
-        text: "Three free throws through the hoop.",
-        focus: ["/θ/", "/r/", "/uː/"],
-        difficulty: 8
-    },
-    {
-        id: 4,
-        text: "Very brave veterans validate victory.",
-        focus: ["/v/", "/b/", "/r/"],
-        difficulty: 6
-    },
-    {
-        id: 5,
-        text: "Lily really rarely replies early.",
-        focus: ["/l/", "/r/", "/ɪ/"],
-        difficulty: 9
-    }
-];
-
-class Core5Evaluator {
-    constructor() {
-        this.scores = [];
-        this.recordings = [];
+<!-- CSS에 추가 -->
+<style>
+    .detailed-error {
+        animation: slideIn 0.3s ease;
     }
     
-    // 평가 시작
-    async evaluateAll() {
-        this.scores = [];
-        this.recordings = [];
-        
-        for (let i = 0; i < CORE_SENTENCES.length; i++) {
-            const score = await this.evaluateSentence(i);
-            this.scores.push(score);
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -40%);
         }
-        
-        return this.calculateFinalScore();
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
     }
     
-    // 개별 문장 평가
-    async evaluateSentence(index) {
-        const sentence = CORE_SENTENCES[index];
+    .demo-active {
+        border: 2px solid #ff9800 !important;
+        background: #fff8e1 !important;
+    }
+</style>
+
+<!-- JavaScript에 데모 모드 함수 추가 -->
+<script>
+    // 데모 모드 함수
+    function useDemoMode() {
+        // 데모 모드 활성화
+        window.isDemoMode = true;
         
-        // 1. 녹음 시도
-        const recording = await this.recordSentence(sentence.text);
-        if (!recording || recording.duration < 1) {
-            return {
-                sentenceId: sentence.id,
-                score: 0,
-                reason: "녹음 없음 또는 너무 짧음"
+        // UI 업데이트
+        document.getElementById('demoMode').innerHTML = `
+            <p style="color: #ff9800; font-weight: bold;">
+                <i class="fas fa-check-circle"></i> 데모 모드 활성화됨
+            </p>
+            <p style="color: #666; font-size: 0.9rem;">
+                시뮬레이션된 점수로 테스트가 진행됩니다.
+            </p>
+        `;
+        
+        document.getElementById('demoMode').classList.add('demo-active');
+        
+        // 녹음 버튼을 데모 버튼으로 변경
+        const recordBtn = document.getElementById('startRecordingBtn');
+        if (recordBtn) {
+            recordBtn.onclick = function() {
+                // 데모 녹음 시뮬레이션
+                updateRecordingUI(true);
+                setTimeout(() => {
+                    updateRecordingUI(false);
+                    
+                    // 데모 점수 생성
+                    const score = calculateSimulatedScore();
+                    sentenceScores.push({
+                        sentenceId: CORE_SENTENCES[currentSentenceIndex].id,
+                        text: CORE_SENTENCES[currentSentenceIndex].text,
+                        score: score,
+                        difficulty: CORE_SENTENCES[currentSentenceIndex].difficultyText,
+                        isDemo: true
+                    });
+                    
+                    // 다음 버튼 활성화
+                    elements.buttons.nextSentence.disabled = false;
+                    
+                    showMessage(`데모 모드: 녹음 완료! 점수: ${score}점`, 'success');
+                }, 2000);
             };
+            recordBtn.innerHTML = '<i class="fas fa-play"></i>';
+            recordBtn.title = '데모 녹음 시작';
         }
         
-        // 2. 실제 발음 분석 (간소화된 버전)
-        const pronunciationScore = this.analyzePronunciation(recording.audioData, sentence);
-        
-        // 3. 최종 점수 계산
-        const finalScore = Math.floor(
-            pronunciationScore * (sentence.difficulty / 10) * 0.8 + 
-            Math.random() * 20  // 실제 데이터가 없으므로 랜덤 요소
-        );
-        
-        return {
-            sentenceId: sentence.id,
-            text: sentence.text,
-            score: Math.min(100, Math.max(0, finalScore)),
-            focus: sentence.focus
-        };
+        showMessage('데모 모드가 활성화되었습니다. 실제 녹음 없이 테스트가 진행됩니다.', 'info');
     }
-    
-    // 간단한 녹음 함수
-    async recordSentence(text) {
-        return new Promise((resolve) => {
-            // 실제 구현에서는 MediaRecorder 사용
-            setTimeout(() => {
-                resolve({
-                    audioData: "fake_audio_data",
-                    duration: 3 + Math.random() * 2,
-                    timestamp: Date.now()
-                });
-            }, 1000);
-        });
-    }
-    
-    // 발음 분석 (실제 구현은 음성 인식 API 필요)
-    analyzePronunciation(audioData, sentence) {
-        // 여기에 실제 음성 분석 로직
-        // 현재는 더미 데이터 반환
-        return 60 + Math.random() * 30;
-    }
-    
-    // 최종 점수 계산
-    calculateFinalScore() {
-        if (this.scores.length === 0) return 0;
-        
-        // 모든 문장 점수 평균
-        const total = this.scores.reduce((sum, item) => sum + item.score, 0);
-        const average = total / this.scores.length;
-        
-        // S레벨 매핑 (기존 기준 유지)
-        const sLevel = this.getSLevel(average);
-        
-        return {
-            totalScore: Math.round(average),
-            sLevel: sLevel.level,
-            levelDescription: sLevel.description,
-            breakdown: this.scores,
-            timestamp: new Date().toISOString()
-        };
-    }
-    
-    // 기존 S레벨 기준 적용
-    getSLevel(score) {
-        const thresholds = [
-            { level: 1, min: 0, max: 20, desc: "기본 발음 연습 필요" },
-            { level: 2, min: 21, max: 35, desc: "초보자 수준" },
-            { level: 3, min: 36, max: 50, desc: "기본 의사소통 가능" },
-            { level: 4, min: 51, max: 60, desc: "일상 대화 가능" },
-            { level: 5, min: 61, max: 70, desc: "평균 이상" },
-            { level: 6, min: 71, max: 80, desc: "원활한 의사소통" },
-            { level: 7, min: 81, max: 88, desc: "우수한 발음" },
-            { level: 8, min: 89, max: 93, desc: "원어민에 가까움" },
-            { level: 9, min: 94, max: 97, desc: "완벽에 가까움" },
-            { level: 10, min: 98, max: 100, desc: "완벽" }
-        ];
-        
-        for (const threshold of thresholds) {
-            if (score >= threshold.min && score <= threshold.max) {
-                return {
-                    level: threshold.level,
-                    description: threshold.desc
-                };
-            }
-        }
-        
-        return { level: 1, description: "평가 불가" };
-    }
-}
-
-// ===== 실행 예제 =====
-async function runCore5Test() {
-    console.log("🎤 코어 5문장 발음 평가 시작");
-    console.log("=" .repeat(50));
-    
-    const evaluator = new Core5Evaluator();
-    const result = await evaluator.evaluateAll();
-    
-    // 결과 출력
-    console.log(`\n📊 최종 결과:`);
-    console.log(`총점: ${result.totalScore}점`);
-    console.log(`S레벨: S${result.sLevel}`);
-    console.log(`평가: ${result.levelDescription}`);
-    
-    console.log("\n📝 문장별 점수:");
-    result.breakdown.forEach(item => {
-        console.log(`  ${item.text.substring(0, 30)}... : ${item.score}점`);
-    });
-    
-    console.log("\n✅ 평가 완료!");
-    return result;
-}
-
-// 페이지 로드 시 실행
-document.addEventListener('DOMContentLoaded', () => {
-    const startButton = document.createElement('button');
-    startButton.textContent = "🎤 5문장 발음 평가 시작";
-    startButton.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 30px;
-        background: linear-gradient(135deg, #4361ee, #3a56d4);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
-        z-index: 9999;
-    `;
-    
-    startButton.onclick = runCore5Test;
-    document.body.appendChild(startButton);
-});
+</script>
